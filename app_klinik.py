@@ -58,8 +58,7 @@ if gejala := st.chat_input("Ketik keluhan Anda di sini... (Contoh: Sudah 2 hari 
                     1. Empati: Mulai dengan sapaan hangat dan tunjukkan empati atas keluhan mereka.
                     2. Analisis & Diagnosis Banding: Sebutkan 2-3 kemungkinan kondisi medis yang paling masuk akal berdasarkan gejala. Gunakan bahasa awam yang mudah dipahami.
                     3. Penanganan Mandiri: Berikan tips pertolongan pertama atau obat bebas yang aman (misal: paracetamol).
-                    4. BATASAN: Jangan berikan diagnosis pasti atau resep obat keras.
-                    5. Arahan: Sarankan untuk datang langsung ke Klinik Harapan Sehat untuk pemeriksaan fisik."""
+                    4. Arahan: Sarankan untuk datang langsung ke Klinik Harapan Sehat untuk pemeriksaan fisik."""
                 }
                 
                 messages_for_api = [system_prompt] + st.session_state.messages
