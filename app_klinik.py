@@ -5,43 +5,74 @@ import os
 # 1. Masukkan API Key Groq kamu di sini
 os.environ["GROQ_API_KEY"] = "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"
 
-# --- TAMPILAN WEB APP ---
-st.set_page_config(page_title="Klinik Harapan Sehat", page_icon="🏥")
-st.title("🏥 Klinik Harapan Sehat - Skrining AI")
-st.write("Silakan masukkan keluhan Anda di bawah ini:")
+# --- PENGATURAN HALAMAN ---
+st.set_page_config(page_title="Klinik Harapan Sehat", page_icon="🏥", layout="wide")
 
-# Input keluhan dari pasien
-gejala = st.text_area("Keluhan Anda:", placeholder="Contoh: Pusing sebelah kanan, hidung tersumbat, dan mual...")
+# --- SIDEBAR (Panel Samping) ---
+with st.sidebar:
+    st.title("🏥 Harapan Sehat")
+    st.markdown("---")
+    st.write("**🕒 Jam Operasional:**")
+    st.write("• Senin - Jumat: 08.00 - 20.00 WIB")
+    st.write("• Sabtu - Minggu: 09.00 - 15.00 WIB")
+    st.markdown("---")
+    st.info("💡 **Catatan:** AI ini dikonfigurasi untuk skrining awal dan saran penanganan darurat pertama oleh Dokter Senior.")
+    
+    # Tombol untuk reset obrolan
+    if st.button("🔄 Mulai Obrolan Baru"):
+        st.session_state.messages = []
+        st.rerun()
 
-# Tombol untuk memicu AI
-if st.button("Analisis Gejala"):
-    if gejala:
-        # Menampilkan efek loading saat AI sedang mikir
-        with st.spinner("AI Llama 3.1 sedang menganalisis super cepat..."):
+# --- TAMPILAN UTAMA ---
+st.title("Halo! Saya Dr. Anda. Ada yang bisa saya bantu? ✨")
+st.write("Silakan ceritakan keluhan kesehatan yang Anda rasakan di bawah ini.")
+
+# --- SESSION STATE (Menyimpan Riwayat Chat) ---
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+# Menampilkan riwayat chat di layar
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+# --- INPUT CHAT DARI PASIEN ---
+if gejala := st.chat_input("Ketik keluhan Anda di sini... (Contoh: Sudah 2 hari demam dan pusing)"):
+    
+    # Tampilkan pesan user
+    with st.chat_message("user"):
+        st.markdown(gejala)
+    
+    st.session_state.messages.append({"role": "user", "content": gejala})
+    
+    # Proses AI dengan Persona Dokter Senior
+    with st.chat_message("assistant"):
+        with st.spinner("Dr. Anda sedang menganalisis gejala Anda..."):
             try:
-                # Memanggil API Groq lewat litellm
+                system_prompt = {
+                    "role": "system", 
+                    "content": """Kamu adalah Dr. Anda, seorang dokter umum senior dengan pengalaman lebih dari 15 tahun di Klinik Harapan Sehat. Sifatmu empatik, menenangkan, analitis, dan profesional. 
+
+                    Tugas utamamu adalah menganalisis gejala pasien dan memberikan edukasi.
+                    PANDUAN MENJAWAB:
+                    1. Empati: Mulai dengan sapaan hangat dan tunjukkan empati atas keluhan mereka.
+                    2. Analisis & Diagnosis Banding: Sebutkan 2-3 kemungkinan kondisi medis yang paling masuk akal berdasarkan gejala. Gunakan bahasa awam yang mudah dipahami.
+                    3. Penanganan Mandiri: Berikan tips pertolongan pertama atau obat bebas yang aman (misal: paracetamol).
+                    4. BATASAN: Jangan berikan diagnosis pasti atau resep obat keras.
+                    5. Arahan: Sarankan untuk datang langsung ke Klinik Harapan Sehat untuk pemeriksaan fisik."""
+                }
+                
+                messages_for_api = [system_prompt] + st.session_state.messages
+                
                 respons = litellm.completion(
-                    model="groq/llama-3.3-70b-versatile", # <-- Menggunakan model Groq terbaru yang paling cepat
-                    messages=[
-                        {
-                            "role": "system", 
-                            "content": "Kamu adalah asisten klinik yang ramah dan profesional. Jawablah menggunakan bahasa Indonesia yang baik. Berikan tips ringan dan penanganan pertama. JANGAN PERNAH memberikan diagnosis pasti atau resep obat keras. Selalu sarankan untuk menemui dokter secara langsung."
-                        },
-                        {
-                            "role": "user", 
-                            "content": gejala
-                        }
-                    ]
+                    model="groq/llama-3.3-70b-versatile",
+                    messages=messages_for_api
                 )
                 
-                # Menampilkan hasil jawaban di web
-                st.success("Saran dari AI Klinik:")
-                st.write(respons.choices[0].message.content)
-            
-            except Exception as e:
-                # Mencegah web crash jika terjadi error
-                st.error(f"Maaf, AI sedang ada kendala: {e}")
+                jawaban_ai = respons.choices[0].message.content
                 
-    else:
-        # Peringatan kalau teks kosong tapi tombol keburu dipencet
-        st.warning("Mohon tuliskan keluhan Anda terlebih dahulu sebelum menekan tombol.")
+                st.markdown(jawaban_ai)
+                st.session_state.messages.append({"role": "assistant", "content": jawaban_ai})
+                
+            except Exception as e:
+                st.error(f"Maaf, sistem klinik sedang sibuk: {e}")
